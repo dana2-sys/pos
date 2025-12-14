@@ -1,74 +1,102 @@
 <%- include('partials/header') %>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h2><%= ticket.title %></h2>
-    <span class="badge
-      <% if (ticket.status === 'open') { %> bg-success
-      <% } else if (ticket.status === 'in_progress') { %> bg-warning text-dark
-      <% } else { %> bg-danger <% } %>">
-      <%= ticket.status %>
-    </span>
-  </div>
-  <div class="card-body">
-    <p class="card-text"><%= ticket.description %></p>
-  </div>
-</div>
-
-<% if (user && user.is_admin) { %>
-  <div class="card mb-4">
-    <div class="card-header">
-      <h3>Update Status</h3>
+<div class="row">
+  <!-- Main Ticket Content -->
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="mb-0"><%= ticket.title %></h1>
+      <a href="/tickets" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to All Tickets</a>
     </div>
-    <div class="card-body">
-      <form action="/tickets/<%= ticket.id %>/status" method="POST" class="d-flex">
-        <select name="status" class="form-select me-2">
-          <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
-          <option value="in_progress" <%= ticket.status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
-          <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
-        </select>
-        <button type="submit" class="btn btn-primary">Update</button>
-      </form>
-    </div>
-  </div>
-<% } %>
 
-<div class="card mb-4">
-  <div class="card-header">
-    <h3>Comments</h3>
-  </div>
-  <div class="card-body">
-    <% if (comments.length > 0) { %>
-      <ul class="list-group list-group-flush">
-        <% comments.forEach(comment => { %>
-          <li class="list-group-item">
-            <p><%= comment.content %></p>
-            <small class="text-muted">by <%= comment.username %></small>
-          </li>
-        <% }); %>
-      </ul>
-    <% } else { %>
-      <p>No comments yet.</p>
-    <% } %>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <h3>Add a Comment</h3>
-  </div>
-  <div class="card-body">
-    <form action="/tickets/<%= ticket.id %>/comments" method="POST">
-      <div class="mb-3">
-        <textarea name="content" class="form-control" rows="3" required></textarea>
+    <!-- Original Ticket Post -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white d-flex justify-content-between">
+        <span><i class="fas fa-user-circle"></i> <strong><%= ticket.created_by %></strong></span>
+        <span class="text-light"><i class="fas fa-clock"></i> <%= new Date(ticket.created_at).toLocaleString() %></span>
       </div>
-      <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
-  </div>
-</div>
+      <div class="card-body">
+        <p class="card-text"><%= ticket.description %></p>
+      </div>
+    </div>
 
-<div class="mt-4">
-  <a href="/tickets" class="btn btn-secondary">Back to All Tickets</a>
+    <!-- Comments Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4><i class="fas fa-comments"></i> Conversation</h4>
+      </div>
+      <div class="card-body">
+        <% if (comments.length > 0) { %>
+          <% comments.forEach(comment => { %>
+            <div class="comment mb-3">
+              <div class="d-flex">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-user-circle fa-2x text-muted"></i>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                  <div class="d-flex justify-content-between">
+                    <strong><%= comment.username %></strong>
+                    <small class="text-muted"><i class="fas fa-clock"></i> <%= new Date(comment.created_at).toLocaleString() %></small>
+                  </div>
+                  <p><%= comment.content %></p>
+                </div>
+              </div>
+            </div>
+            <hr>
+          <% }); %>
+        <% } else { %>
+          <p class="text-center text-muted">No comments yet. Be the first to reply!</p>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Add Comment Form -->
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-reply"></i> Add Your Comment</h5>
+      </div>
+      <div class="card-body">
+        <form action="/tickets/<%= ticket.id %>/comments" method="POST">
+          <div class="mb-3">
+            <textarea name="content" class="form-control" rows="4" placeholder="Type your comment here..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar with Ticket Info -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5><i class="fas fa-info-circle"></i> Ticket Details</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Status:</strong>
+          <span class="badge
+            <% if (ticket.status === 'open') { %> bg-success
+            <% } else if (ticket.status === 'in_progress') { %> bg-warning text-dark
+            <% } else { %> bg-danger <% } %>">
+            <i class="fas fa-<%= ticket.status === 'open' ? 'folder-open' : (ticket.status === 'in_progress' ? 'spinner' : 'check-circle') %>"></i>
+            <%= ticket.status.replace('_', ' ') %>
+          </span>
+        </p>
+        <hr>
+        <% if (user && user.is_admin) { %>
+          <h5 class="mt-4">Update Status</h5>
+          <form action="/tickets/<%= ticket.id %>/status" method="POST" class="d-flex">
+            <select name="status" class="form-select me-2">
+              <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
+              <option value="in_progress" <%= ticket.status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+              <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i></button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
 </div>
 
 <%- include('partials/footer') %>

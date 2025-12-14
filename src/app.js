@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const Database = require('better-sqlite3');
 
@@ -16,6 +17,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+app.use(flash());
 
 // Middleware to fetch user data
 app.use((req, res, next) => {
@@ -25,6 +27,8 @@ app.use((req, res, next) => {
   } else {
     res.locals.user = null;
   }
+  res.locals.success_messages = req.flash('success');
+  res.locals.error_messages = req.flash('error');
   next();
 });
 
@@ -38,6 +42,7 @@ app.post('/register', (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   const stmt = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)');
   stmt.run(username, hashedPassword);
+  req.flash('success', 'You have successfully registered! Please log in.');
   res.redirect('/login');
 });
 
@@ -52,14 +57,17 @@ app.post('/login', (req, res) => {
 
   if (user && bcrypt.compareSync(password, user.password)) {
     req.session.userId = user.id;
-    res.redirect('/');
+    req.flash('success', 'Welcome back!');
+    res.redirect('/tickets');
   } else {
-    res.render('login', { error: 'Invalid username or password' });
+    req.flash('error', 'Invalid username or password.');
+    res.redirect('/login');
   }
 });
 
 app.get('/logout', (req, res) => {
   req.session.destroy();
+  req.flash('success', 'You have been logged out.');
   res.redirect('/login');
 });
 
@@ -76,6 +84,7 @@ function requireLogin(req, res, next) {
   if (req.session.userId) {
     next();
   } else {
+    req.flash('error', 'You must be logged in to view that page.');
     res.redirect('/login');
   }
 }
@@ -85,7 +94,8 @@ function requireAdmin(req, res, next) {
   if (res.locals.user && res.locals.user.is_admin) {
     next();
   } else {
-    res.status(403).send('Forbidden');
+    req.flash('error', 'You do not have permission to view that page.');
+    res.redirect('/');
   }
 }
 
@@ -107,6 +117,7 @@ app.post('/admin/users/:id/toggle-admin', requireLogin, requireAdmin, (req, res)
   if (userToUpdate) {
     const newAdminStatus = userToUpdate.is_admin ? 0 : 1;
     db.prepare('UPDATE users SET is_admin = ? WHERE id = ?').run(newAdminStatus, req.params.id);
+    req.flash('success', `User ${userToUpdate.username}'s admin status has been updated.`);
   }
   res.redirect('/admin/dashboard');
 });
@@ -120,6 +131,7 @@ app.post('/tickets', requireLogin, (req, res) => {
   const { title, description } = req.body;
   const stmt = db.prepare('INSERT INTO tickets (title, description, user_id) VALUES (?, ?, ?)');
   stmt.run(title, description, req.session.userId);
+  req.flash('success', 'Your ticket has been successfully created!');
   res.redirect('/tickets');
 });
 
@@ -130,11 +142,16 @@ app.get('/tickets', requireLogin, (req, res) => {
 });
 
 app.get('/tickets/:id', requireLogin, (req, res) => {
-  const ticketStmt = db.prepare('SELECT * FROM tickets WHERE id = ?');
+  const ticketStmt = db.prepare(`
+    SELECT tickets.*, users.username as created_by
+    FROM tickets
+    JOIN users ON tickets.user_id = users.id
+    WHERE tickets.id = ?
+  `);
   const ticket = ticketStmt.get(req.params.id);
 
   const commentsStmt = db.prepare(`
-    SELECT comments.content, users.username
+    SELECT comments.content, users.username, comments.created_at
     FROM comments
     JOIN users ON comments.user_id = users.id
     WHERE comments.ticket_id = ?
@@ -148,6 +165,7 @@ app.post('/tickets/:id/status', requireLogin, requireAdmin, (req, res) => {
   const { status } = req.body;
   const stmt = db.prepare('UPDATE tickets SET status = ? WHERE id = ?');
   stmt.run(status, req.params.id);
+  req.flash('success', 'Ticket status has been updated.');
   res.redirect(`/tickets/${req.params.id}`);
 });
 
@@ -155,6 +173,7 @@ app.post('/tickets/:id/comments', requireLogin, (req, res) => {
   const { content } = req.body;
   const stmt = db.prepare('INSERT INTO comments (content, ticket_id, user_id) VALUES (?, ?, ?)');
   stmt.run(content, req.params.id, req.session.userId);
+  req.flash('success', 'Your comment has been added.');
   res.redirect(`/tickets/${req.params.id}`);
 });
 
