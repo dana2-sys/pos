@@ -1,0 +1,4 @@
+node_modules
+db/tickets.db
+server.log
+.env

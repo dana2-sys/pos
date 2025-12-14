@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Tickets</title>
+</head>
+<body>
+  <h1>All Tickets</h1>
+  <a href="/tickets/new">Create New Ticket</a>
+  <ul>
+    <% tickets.forEach(ticket => { %>
+      <li>
+        <a href="/tickets/<%= ticket.id %>"><%= ticket.title %></a> - <%= ticket.status %>
+      </li>
+    <% }); %>
+  </ul>
+  <a href="/logout">Logout</a>
+</body>
+</html>
