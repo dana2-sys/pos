@@ -2,8 +2,12 @@ const Database = require('better-sqlite3');
 const db = new Database('db/tickets.db', { verbose: console.log });
 
 function init() {
+  db.exec(`DROP TABLE IF EXISTS comments;`);
+  db.exec(`DROP TABLE IF EXISTS tickets;`);
+  db.exec(`DROP TABLE IF EXISTS users;`);
+
   db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
@@ -12,7 +16,7 @@ function init() {
   `);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS tickets (
+    CREATE TABLE tickets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
@@ -24,7 +28,7 @@ function init() {
   `);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS comments (
+    CREATE TABLE comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       content TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
