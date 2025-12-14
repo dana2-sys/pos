@@ -14,12 +14,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
 }));
 
 // Routes
 app.get('/register', (req, res) => {
-  res.render('register');
+  res.render('register', { user: null });
 });
 
 app.post('/register', (req, res) => {
@@ -31,7 +31,7 @@ app.post('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  res.render('login', { error: null, user: null });
 });
 
 app.post('/login', (req, res) => {
@@ -43,7 +43,7 @@ app.post('/login', (req, res) => {
     req.session.userId = user.id;
     res.redirect('/');
   } else {
-    res.render('login', { error: 'Invalid username or password' });
+    res.render('login', { error: 'Invalid username or password', user: null });
   }
 });
 
@@ -83,7 +83,9 @@ function requireAdmin(req, res, next) {
 
 // Ticket routes
 app.get('/tickets/new', requireLogin, (req, res) => {
-  res.render('create-ticket');
+  const userStmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  const user = userStmt.get(req.session.userId);
+  res.render('create-ticket', { user });
 });
 
 app.post('/tickets', requireLogin, (req, res) => {
@@ -96,7 +98,9 @@ app.post('/tickets', requireLogin, (req, res) => {
 app.get('/tickets', requireLogin, (req, res) => {
   const stmt = db.prepare('SELECT * FROM tickets');
   const tickets = stmt.all();
-  res.render('tickets', { tickets });
+  const userStmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  const user = userStmt.get(req.session.userId);
+  res.render('tickets', { tickets, user });
 });
 
 app.get('/tickets/:id', requireLogin, (req, res) => {

@@ -1,42 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= ticket.title %></title>
-</head>
-<body>
-  <h1><%= ticket.title %></h1>
-  <p><%= ticket.description %></p>
-  <p>Status: <%= ticket.status %></p>
+<%- include('partials/header') %>
 
-  <% if (user && user.is_admin) { %>
-    <hr>
-    <h3>Update Status</h3>
-    <form action="/tickets/<%= ticket.id %>/status" method="POST">
-      <select name="status">
-        <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
-        <option value="in_progress" <%= ticket.status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
-        <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
-      </select>
-      <button type="submit">Update Status</button>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h2><%= ticket.title %></h2>
+    <span class="badge
+      <% if (ticket.status === 'open') { %> bg-success
+      <% } else if (ticket.status === 'in_progress') { %> bg-warning text-dark
+      <% } else { %> bg-danger <% } %>">
+      <%= ticket.status %>
+    </span>
+  </div>
+  <div class="card-body">
+    <p class="card-text"><%= ticket.description %></p>
+  </div>
+</div>
+
+<% if (user && user.is_admin) { %>
+  <div class="card mb-4">
+    <div class="card-header">
+      <h3>Update Status</h3>
+    </div>
+    <div class="card-body">
+      <form action="/tickets/<%= ticket.id %>/status" method="POST" class="d-flex">
+        <select name="status" class="form-select me-2">
+          <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
+          <option value="in_progress" <%= ticket.status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+          <option value="closed" <%= ticket.status === 'closed' ? 'selected' : '' %>>Closed</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Update</button>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h3>Comments</h3>
+  </div>
+  <div class="card-body">
+    <% if (comments.length > 0) { %>
+      <ul class="list-group list-group-flush">
+        <% comments.forEach(comment => { %>
+          <li class="list-group-item">
+            <p><%= comment.content %></p>
+            <small class="text-muted">by <%= comment.username %></small>
+          </li>
+        <% }); %>
+      </ul>
+    <% } else { %>
+      <p>No comments yet.</p>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Add a Comment</h3>
+  </div>
+  <div class="card-body">
+    <form action="/tickets/<%= ticket.id %>/comments" method="POST">
+      <div class="mb-3">
+        <textarea name="content" class="form-control" rows="3" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-  <% } %>
+  </div>
+</div>
 
-  <hr>
-  <h3>Comments</h3>
-  <ul>
-    <% comments.forEach(comment => { %>
-      <li><%= comment.content %> - <em>by <%= comment.username %></em></li>
-    <% }); %>
-  </ul>
-  <hr>
-  <h3>Add a Comment</h3>
-  <form action="/tickets/<%= ticket.id %>/comments" method="POST">
-    <textarea name="content" required></textarea>
-    <button type="submit">Add Comment</button>
-  </form>
-  <br>
-  <a href="/tickets">Back to all tickets</a>
-</body>
-</html>
+<div class="mt-4">
+  <a href="/tickets" class="btn btn-secondary">Back to All Tickets</a>
+</div>
+
+<%- include('partials/footer') %>
